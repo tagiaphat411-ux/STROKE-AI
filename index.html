@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>STROKE AI</title>
+<link rel="icon" href="/robot.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: #030712; color: #fff;
+    font-family: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+    overflow-x: hidden;
+  }
+  svg.i { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .glow {
+    position: absolute; top: 40px; left: 50%; transform: translateX(-50%);
+    width: 800px; max-width: 100%; height: 450px; border-radius: 9999px;
+    background: rgba(14,165,233,.10); filter: blur(150px); pointer-events: none;
+  }
+  .wrap { position: relative; z-index: 1; max-width: 1024px; margin: 0 auto; padding: 32px 16px 40px; }
+  .head { text-align: center; max-width: 768px; margin: 0 auto 28px; }
+  .tag {
+    display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border-radius: 4px;
+    font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+    background: rgba(8,47,73,.8); border: 1px solid rgba(7,89,133,.6); color: #38bdf8; margin-bottom: 12px;
+  }
+  .tag svg.i { width: 14px; height: 14px; }
+  h1 { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-weight: 800; font-size: clamp(28px, 5vw, 40px); letter-spacing: -.02em; margin: 0; }
+  .sub { margin: 12px 0 0; font-size: 14px; line-height: 1.6; color: #d4d4d4; }
+
+  .panel {
+    border-radius: 16px; background: rgba(23,23,23,.95); border: 1px solid rgba(12,74,110,.5);
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,.6); overflow: hidden;
+    display: flex; flex-direction: column; height: min(680px, 78dvh); min-height: 460px;
+  }
+  .bar {
+    padding: 16px; background: #0a0a0a; border-bottom: 1px solid #082f49;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .who { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 12px; flex-shrink: 0;
+    background: linear-gradient(45deg, #0284c7, #06b6d4); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 6px rgba(8,47,73,.6);
+  }
+  .avatar svg.i { width: 20px; height: 20px; }
+  .avatar.has-img { background: transparent; box-shadow: none; }
+  .avatar img { height: 36px; width: auto; display: block; }
+  .name { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .badge {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 4px;
+    background: #082f49; color: #7dd3fc; border: 1px solid #075985; font-weight: 500;
+  }
+  .desc { font-size: 11px; color: #a3a3a3; margin-top: 2px; }
+  .btns { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .btn-guide {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px;
+    background: rgba(69,10,10,.6); border: 1px solid #991b1b; color: #fca5a5;
+    font: 600 12px 'Be Vietnam Pro', sans-serif; cursor: pointer;
+  }
+  .btn-guide:hover { background: rgba(127,29,29,.8); }
+  .btn-call {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px;
+    background: #dc2626; color: #fff; text-decoration: none; font-weight: 700; font-size: 12px;
+  }
+  .btn-call:hover { background: #ef4444; }
+  @media (max-width: 639px) { .btn-guide.top { display: none; } .desc { display: none; } }
+
+  .msgs { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+  @media (max-width: 639px) { .msgs { padding: 16px; } }
+  .row { display: flex; }
+  .row.user { justify-content: flex-end; }
+  .bubble {
+    max-width: 80%; border-radius: 16px; padding: 16px; font-size: 14px; line-height: 1.6;
+  }
+  @media (max-width: 639px) { .bubble { max-width: 90%; font-size: 12.5px; } }
+  .bubble.user { background: #0284c7; color: #fff; border-bottom-right-radius: 0; box-shadow: 0 4px 6px rgba(0,0,0,.3); }
+  .bubble.ai { background: rgba(38,38,38,.95); color: #e5e5e5; border: 1px solid rgba(64,64,64,.6); border-bottom-left-radius: 0; }
+  .bubble.warn {
+    background: rgba(69,10,10,.5); border: 1px solid rgba(185,28,28,.8); color: #f5f5f5;
+    border-bottom-left-radius: 0; box-shadow: 0 10px 15px rgba(69,10,10,.4);
+  }
+  .txt { white-space: pre-wrap; word-wrap: break-word; }
+  .time { font-size: 10px; margin-top: 8px; color: #a3a3a3; }
+  .bubble.user .time { color: #bae6fd; text-align: right; }
+  .more { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(127,29,29,.5); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .btn-dk {
+    display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 12px; border: 0;
+    background: linear-gradient(90deg, #dc2626, #e11d48, #b91c1c); color: #fff;
+    font: 700 12px 'Be Vietnam Pro', sans-serif; text-transform: uppercase; letter-spacing: .05em;
+    box-shadow: 0 10px 15px rgba(69,10,10,.6); cursor: pointer;
+  }
+  .btn-dk:active { transform: scale(.95); }
+  .btn-dk:disabled { opacity: .5; cursor: default; }
+  .btn-dk svg.i { width: 16px; height: 16px; animation: pulse 2s infinite; }
+  .btn-ref {
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 12px;
+    background: #171717; border: 1px solid #404040; color: #d4d4d4;
+    font: 500 12px 'Be Vietnam Pro', sans-serif; cursor: pointer;
+  }
+  .btn-ref:hover { background: #262626; }
+  .btn-ref svg.i { color: #a3a3a3; }
+  @keyframes pulse { 50% { opacity: .5; } }
+  @keyframes bounce { 0%,100% { transform: translateY(-25%); } 50% { transform: none; } }
+  .typing {
+    padding: 14px; border-radius: 16px; border-bottom-left-radius: 0; background: rgba(38,38,38,.8);
+    border: 1px solid rgba(64,64,64,.6); font-size: 12px; color: #a3a3a3; display: flex; align-items: center; gap: 8px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 9999px; background: #38bdf8; animation: bounce 1s infinite; }
+  .dot:nth-child(2) { animation-delay: .2s; } .dot:nth-child(3) { animation-delay: .4s; }
+
+  .chips-box { padding: 12px; background: rgba(10,10,10,.9); border-top: 1px solid rgba(38,38,38,.8); overflow-x: auto; }
+  .chips-title { font-size: 11px; font-weight: 600; color: #a3a3a3; margin-bottom: 8px; }
+  .chips { display: flex; gap: 8px; }
+  .chip {
+    padding: 6px 12px; font: 400 11px 'Be Vietnam Pro', sans-serif; border-radius: 8px; white-space: nowrap; flex-shrink: 0;
+    background: #262626; color: #d4d4d4; border: 1px solid rgba(64,64,64,.6); cursor: pointer;
+  }
+  .chip:hover { background: #404040; color: #fff; }
+
+  .inbar { padding: 14px; background: #0a0a0a; border-top: 1px solid #262626; }
+  .inbar form { display: flex; align-items: center; gap: 8px; margin: 0; }
+  .inbar input {
+    flex: 1; min-width: 0; background: #171717; border: 1px solid #404040; border-radius: 12px; padding: 10px 16px;
+    font: 400 16px 'Be Vietnam Pro', sans-serif; color: #fff; outline: none;
+  }
+  .inbar input::placeholder { color: #737373; }
+  .inbar input:focus { border-color: #0ea5e9; }
+  .send {
+    padding: 10px; border-radius: 12px; border: 0; background: #0284c7; color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .send:hover { background: #0ea5e9; }
+  .send:disabled { background: #262626; color: #525252; cursor: default; }
+  .send svg.i { width: 16px; height: 16px; }
+  .disc { padding: 10px 16px; background: #0a0a0a; border-top: 1px solid rgba(38,38,38,.8); text-align: center; font-size: 11px; line-height: 1.5; color: #a3a3a3; }
+  .disc strong { color: #d4d4d4; font-weight: 600; }
+  .disc a { color: #f87171; font-weight: 700; }
+
+  /* Bảng tra cứu nhanh */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+  .overlay.show { display: flex; }
+  .modal {
+    width: 100%; max-width: 560px; max-height: 88dvh; overflow-y: auto; border-radius: 16px;
+    background: #171717; border: 1px solid #991b1b; padding: 20px; color: #e5e5e5; font-size: 14px; line-height: 1.6;
+  }
+  .modal h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; margin: 0 0 4px; color: #fff; }
+  .modal h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: #fca5a5; margin: 18px 0 6px; }
+  .modal ul, .modal ol { margin: 0; padding-left: 20px; }
+  .modal li { margin: 4px 0; }
+  .modal .close {
+    margin-top: 18px; width: 100%; padding: 10px; border-radius: 12px; border: 1px solid #404040;
+    background: #262626; color: #fff; font: 600 14px 'Be Vietnam Pro', sans-serif; cursor: pointer;
+  }
+  .modal .call { display: block; margin-top: 16px; text-align: center; padding: 12px; border-radius: 12px; background: #dc2626; color: #fff; font-weight: 700; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="glow" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="head">
+    <div class="tag"><svg class="i" data-icon="sparkles" viewBox="0 0 24 24"></svg><span>STROKE AI - Trợ lí khẩn cấp</span></div>
+    <h1>STROKE AI</h1>
+    <p class="sub">Đối thoại trực tiếp với STROKE AI để được hướng dẫn sử dụng bộ công cụ STROKE KIT và sơ cứu đúng cách.</p>
+  </div>
+
+  <div class="panel">
+    <div class="bar">
+      <div class="who">
+        <div class="avatar" id="avatar"><svg class="i" data-icon="bot" viewBox="0 0 24 24"></svg></div>
+        <div style="min-width:0">
+          <div class="name"><span>STROKE AI</span><span class="badge">Trợ lý Thông minh</span></div>
+          <div class="desc">Sẵn sàng giải đáp mọi câu hỏi &amp; Hướng dẫn cấp cứu B.E.F.A.S.T</div>
+        </div>
+      </div>
+      <div class="btns">
+        <button class="btn-guide top" id="guideTop"><svg class="i" data-icon="shield" viewBox="0 0 24 24"></svg><span>Chỉ dẫn khẩn cấp</span></button>
+        <a class="btn-call" href="tel:115"><svg class="i" data-icon="phone" viewBox="0 0 24 24"></svg><span>Gọi 115</span></a>
+      </div>
+    </div>
+
+    <div class="msgs" id="msgs"></div>
+
+    <div class="chips-box">
+      <div class="chips-title">Gợi ý câu hỏi phổ biến:</div>
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <div class="inbar">
+      <form id="form">
+        <input id="input" type="text" autocomplete="off" enterkeyhint="send" placeholder="Nhập bất kỳ câu hỏi nào: bài vở, tâm sự, hoặc dấu hiệu nghi ngờ đột quỵ...">
+        <button class="send" id="send" type="submit" aria-label="Gửi tin nhắn cho STROKE AI"><svg class="i" data-icon="send" viewBox="0 0 24 24"></svg></button>
+      </form>
+    </div>
+
+    <div class="disc">
+      ⚠️ <strong>Tuyên bố miễn trừ trách nhiệm y tế:</strong> Nội dung và Chatbot STROKE AI mang tính chất hỗ trợ giáo dục và nâng cao nhận thức, không thay thế cho chẩn đoán hoặc chỉ định y tế chuyên sâu từ bác sĩ. Trong tình huống khẩn cấp, luôn gọi ngay <a href="tel:115">115</a>!
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true">
+    <h2>Chỉ dẫn khẩn cấp</h2>
+    <div style="color:#a3a3a3;font-size:12px">Bảng tra cứu nhanh khi nghi ngờ đột quỵ</div>
+
+    <h3>Nhận diện B.E.F.A.S.T</h3>
+    <ul>
+      <li><strong>B (Balance):</strong> mất thăng bằng, chóng mặt đột ngột, loạng choạng.</li>
+      <li><strong>E (Eyes):</strong> mờ mắt đột ngột một hoặc hai bên, nhìn đôi.</li>
+      <li><strong>F (Face):</strong> méo miệng, lệch một bên mặt khi cười.</li>
+      <li><strong>A (Arms):</strong> yếu liệt một bên tay hoặc chân, rơi đồ vật.</li>
+      <li><strong>S (Speech):</strong> khó nói, nói ngọng, líu lưỡi, ú ớ.</li>
+      <li><strong>T (Time):</strong> gọi 115 ngay, ghi nhớ giờ xuất hiện dấu hiệu đầu tiên.</li>
+    </ul>
+
+    <h3>Cần làm</h3>
+    <ol>
+      <li>Hô to và giữ không gian xung quanh thông thoáng, an toàn.</li>
+      <li>Gọi ngay 115, nói rõ địa chỉ và các dấu hiệu quan sát được.</li>
+      <li>Đặt người bệnh nằm nghiêng an toàn để dịch đờm nhớt không gây ngạt thở.</li>
+      <li>Ghi nhớ chính xác thời gian xuất hiện dấu hiệu đầu tiên để báo bác sĩ (thời gian vàng 3 đến 4,5 giờ).</li>
+    </ol>
+
+    <h3>Tuyệt đối 3 KHÔNG</h3>
+    <ul>
+      <li>Không cạo gió.</li>
+      <li>Không chích máu đầu ngón tay hoặc dái tai.</li>
+      <li>Không cho ăn uống nước chanh hay uống thuốc.</li>
+    </ul>
+
+    <a class="call" href="tel:115">Gọi 115 ngay</a>
+    <button class="close" id="closeGuide">Đóng</button>
+  </div>
+</div>
+
+<script>
+  var ICONS = {
+    bot: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
+    shield: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
+    phone: '<path d="M13 2a9 9 0 0 1 9 9"/><path d="M13 6a5 5 0 0 1 5 5"/><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/>',
+    send: '<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>',
+    alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+    sparkles: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>',
+    info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>'
+  };
+  function icon(name) {
+    return '<svg class="i" viewBox="0 0 24 24">' + ICONS[name] + '</svg>';
+  }
+  document.querySelectorAll('svg[data-icon]').forEach(function (el) {
+    el.innerHTML = ICONS[el.getAttribute('data-icon')];
+  });
+
+  // Dùng hình robot nếu có file robot.png trong dự án
+  var probe = new Image();
+  probe.onload = function () {
+    var a = document.getElementById('avatar');
+    a.classList.add('has-img');
+    a.innerHTML = '';
+    a.appendChild(probe);
+  };
+  probe.alt = 'STROKE AI';
+  probe.src = '/robot.png';
+
+  var msgsEl = document.getElementById('msgs');
+  var inputEl = document.getElementById('input');
+  var sendEl = document.getElementById('send');
+  var overlay = document.getElementById('overlay');
+  var messages = [];
+  var loading = false;
+  var counter = 0;
+
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function fmt(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'); }
+  function toBottom() { msgsEl.scrollTop = msgsEl.scrollHeight; }
+
+  function openGuide() { overlay.classList.add('show'); }
+  function closeGuide() { overlay.classList.remove('show'); }
+  document.getElementById('guideTop').onclick = openGuide;
+  document.getElementById('closeGuide').onclick = closeGuide;
+  overlay.addEventListener('click', function (e) { if (e.target === overlay) closeGuide(); });
+
+  function render(msg) {
+    var row = document.createElement('div');
+    row.className = 'row ' + msg.sender;
+    var cls = msg.sender === 'user' ? 'user' : (msg.isWarning ? 'warn' : 'ai');
+    var html = '<div class="bubble ' + cls + '"><div class="txt">' + fmt(msg.text) + '</div>';
+    if (msg.sender === 'ai' && (msg.showDontKnowButton || msg.showGuideOnly)) {
+      html += '<div class="more">';
+      if (msg.showDontKnowButton) {
+        html += '<button class="btn-dk" data-act="dk">' + icon('alert') + '<span>Tôi không biết phải làm gì</span></button>';
+      }
+      html += '<button class="btn-ref" data-act="guide">' + icon('info') + '<span>Mở bảng tra cứu nhanh</span></button></div>';
+    }
+    html += '<div class="time">' + msg.timestamp + '</div></div>';
+    row.innerHTML = html;
+    row.querySelectorAll('button[data-act]').forEach(function (b) {
+      b.onclick = function () {
+        if (b.getAttribute('data-act') === 'guide') { openGuide(); return; }
+        send('Tôi không biết phải làm gì, hãy hướng dẫn cụ thể từng bước hành động cấp cứu an toàn cho tôi!');
+      };
+    });
+    msgsEl.appendChild(row);
+    toBottom();
+  }
+
+  function addMsg(sender, text, extra) {
+    var m = { id: sender + '_' + (++counter), sender: sender, text: text, timestamp: 'Vừa xong' };
+    for (var k in (extra || {})) m[k] = extra[k];
+    messages.push(m);
+    render(m);
+    return m;
+  }
+
+  function showTyping() {
+    var row = document.createElement('div');
+    row.className = 'row ai';
+    row.id = 'typing';
+    row.innerHTML = '<div class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span>STROKE AI đang suy nghĩ câu trả lời...</span></div>';
+    msgsEl.appendChild(row);
+    toBottom();
+  }
+  function hideTyping() { var t = document.getElementById('typing'); if (t) t.remove(); }
+
+  function updateSend() { sendEl.disabled = !inputEl.value.trim() || loading; }
+  inputEl.addEventListener('input', updateSend);
+
+  async function send(custom) {
+    var text = (custom || inputEl.value || '').trim();
+    if (!text || loading) return;
+    var historyForServer = messages.map(function (m) { return { sender: m.sender, text: m.text }; });
+
+    addMsg('user', text);
+    if (!custom) inputEl.value = '';
+    loading = true; updateSend(); showTyping();
+
+    try {
+      var res = await fetch('/api/ai-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, history: historyForServer })
+      });
+      if (!res.ok) throw new Error('Mạng bị gián đoạn hoặc không có phản hồi');
+      var data = await res.json();
+      var reply = data.reply || 'STROKE AI đã nhận diện thông tin. Hãy luôn nhớ gọi 115 ngay khi có dấu hiệu nghi ngờ đột quỵ!';
+      var showBtn = !!data.showDontKnowButton ||
+        reply.indexOf('ngăn 1, ngăn 2 và ngăn 3') !== -1 ||
+        reply.indexOf('Tôi không biết phải làm gì') !== -1;
+      var warn = reply.indexOf('CẢNH BÁO') !== -1 || reply.indexOf('115') !== -1 || reply.indexOf('HƯỚNG DẪN CỤ THỂ') !== -1;
+      hideTyping();
+      addMsg('ai', reply, { isWarning: warn, showDontKnowButton: showBtn });
+    } catch (err) {
+      hideTyping();
+      addMsg('ai', 'Xin lỗi, hiện chưa kết nối được với STROKE AI. Nếu có người đang nghi ngờ đột quỵ, hãy gọi 115 ngay và mở bảng tra cứu nhanh bên dưới.', { isWarning: true, showGuideOnly: true });
+    }
+    loading = false; updateSend(); inputEl.focus();
+  }
+
+  document.getElementById('form').addEventListener('submit', function (e) { e.preventDefault(); send(); });
+
+  // Gợi ý câu hỏi
+  var chipsEl = document.getElementById('chips');
+  [
+    'Cách sơ cứu khi gặp người bị đột quỵ là gì?',
+    'Thức khuya học bài nhiều có làm tăng nguy cơ đột quỵ ở học sinh không?',
+    'Vì sao tuyệt đối KHÔNG được cạo gió hay chích máu?',
+    'Bệnh nhân méo miệng và nói ngọng có phải đột quỵ không?'
+  ].forEach(function (q) {
+    var b = document.createElement('button');
+    b.className = 'chip';
+    b.textContent = q;
+    b.onclick = function () { send(q); };
+    chipsEl.appendChild(b);
+  });
+
+  // Lời chào
+  addMsg('ai', 'Xin chào bạn! Mình là STROKE AI - người đồng hành của dự án STROKE KIT.  Bạn đang gặp tình huống gì cần mình hỗ trợ không?');
+  updateSend();
+</script>
+</body>
+</html>
